@@ -7,20 +7,20 @@ import {
 } from "@heroicons/react/24/outline";
 import { Menu } from "@headlessui/react";
 import Avatar from "./Avatar";
-import TimeAgo from "react-timeago";
+import TimeAgo from "react-timeago"; 
 import Link from "next/link";
-import { Jelly } from "@uiball/loaders";
 import { useSession } from "next-auth/react";
-import toast from "react-hot-toast";
+import toast from "react-hot-toast"; 
 import supabase from "../lib/supabaseClient";
-import EditPost from "./EditPost"; // ✅ เปลี่ยนชื่อ component ที่ import
+import EditPost from "./EditPost";
 
 function Post({ post }) {
-  const [vote, setVote] = useState(null);
-  const [votes, setVotes] = useState([]);
-  const [showEdit, setShowEdit] = useState(false); // ✅ ใช้ EditPost popup
-  const { data: session } = useSession();
+  const [vote, setVote] = useState(null); // เก็บการโหวตของผู้ใช้ปัจจุบัน
+  const [votes, setVotes] = useState([]); // เก็บโหวตทั้งหมดของโพสต์นี้
+  const [showEdit, setShowEdit] = useState(false); // ควบคุมการแสดง Edit Modal
+  const { data: session } = useSession(); // ดึงข้อมูล session ของผู้ใช้
 
+  // ดึงข้อมูลโหวตของโพสต์เมื่อโพสต์หรือ session เปลี่ยน
   useEffect(() => {
     fetchVotes();
   }, [post.id, session]);
@@ -29,17 +29,20 @@ function Post({ post }) {
     const { data } = await supabase
       .from("vote")
       .select("*")
-      .eq("post_id", post.id);
+      .eq("post_id", post.id); // ดึงโหวตทั้งหมดที่เกี่ยวกับโพสต์นี้
     setVotes(data || []);
-    const userVote = data?.find((v) => v.username === session?.user?.name);
+    const userVote = data?.find((v) => v.username === session?.user?.name); // หาว่าผู้ใช้ปัจจุบันโหวตหรือยัง
     setVote(userVote?.upvote);
   };
 
   const handleVote = async (isUpvote) => {
-    if (!session) return toast.error("You need to sign in to vote!");
-    if ((vote === true && isUpvote) || (vote === false && !isUpvote)) return;
+    if (!session) return toast.error("You need to sign in to vote!"); // ถ้าไม่ได้ล็อกอิน แสดง error
+    if ((vote === true && isUpvote) || (vote === false && !isUpvote)) return; // ถ้าโหวตซ้ำแบบเดิม ไม่ต้องทำอะไร
 
+    // หาว่าผู้ใช้โหวตไว้แล้วหรือยัง
     const existingVote = votes.find((v) => v.username === session.user.name);
+
+    // ถ้าเคยโหวต อัปเดต, ถ้ายังไม่เคยโหวต ให้เพิ่มโหวตใหม่
     const { error } = existingVote
       ? await supabase
           .from("vote")
@@ -55,15 +58,16 @@ function Post({ post }) {
       toast.error("Error voting!");
     } else {
       toast.success(existingVote ? "Vote updated!" : "Vote placed!");
-      fetchVotes(); // ✅ ดึงคะแนนใหม่
+      fetchVotes(); // รีเฟรชคะแนนโหวตใหม่
     }
   };
 
   const handlePostUpdate = () => {
     fetchVotes();
-    if (typeof window !== "undefined") window.location.reload(); // ✅ reload หน้า
+    if (typeof window !== "undefined") window.location.reload(); // โหลดหน้าใหม่หลังอัปเดต
   };
 
+  // คำนวณจำนวนโหวตสุทธิ (up - down)
   const displayVotes = () => {
     if (!votes || votes.length === 0) return 0;
     const total = votes.reduce((acc, v) => acc + (v.upvote ? 1 : -1), 0);
@@ -72,7 +76,7 @@ function Post({ post }) {
 
   return (
     <>
-      {/* ✅  Edit */}
+      {/* สำหรับแก้ไขโพสต์ */}
       {showEdit && (
         <EditPost
           post={post}
@@ -81,9 +85,9 @@ function Post({ post }) {
         />
       )}
 
-      {/* ✅ Post Card */}
+      {/* กล่องแสดงโพสต์ */}
       <div className="flex cursor-pointer rounded-md border border-gray-300 bg-white shadow-sm hover:border-gray-600 relative">
-        {/* Votes */}
+        {/* แถบโหวตด้านซ้าย */}
         <div className="flex flex-col items-center justify-start space-y-1 rounded-l-md bg-gray-50 p-4 text-gray-400">
           <HandThumbUpIcon
             onClick={() => handleVote(true)}
@@ -100,9 +104,9 @@ function Post({ post }) {
           />
         </div>
 
-        {/* Content */}
+        {/* เนื้อหาโพสต์ */}
         <div className="p-3 pb-1 flex-1">
-          {/* Header */}
+          {/* Header: Avatar, หมวดหมู่, ผู้โพสต์, เวลา */}
           <div className="flex items-center space-x-2">
             <Avatar seed={post.username} />
             <p className="text-xs text-gray-400">
@@ -114,7 +118,7 @@ function Post({ post }) {
               • Posted by {post.username} <TimeAgo date={post.created_at} />
             </p>
 
-            {/* ✅ Three-dot menu */}
+            {/* ปุ่มสามจุดแสดงเมนู Edit/Delete */}
             {session?.user?.name === post.username && (
               <Menu as="div" className="ml-auto relative">
                 <Menu.Button className="p-1 hover:bg-gray-100 rounded-full">
@@ -155,7 +159,7 @@ function Post({ post }) {
                             } else {
                               toast.success("Post deleted!");
                               if (typeof window !== "undefined") {
-                                window.location.reload(); // ✅ reload หน้า
+                                window.location.reload(); // รีโหลดหน้า
                               }
                             }
                           }}
@@ -173,7 +177,7 @@ function Post({ post }) {
             )}
           </div>
 
-          {/* Body */}
+          {/* แสดงหัวข้อและเนื้อหาโพสต์ */}
           <div className="py-4">
             <Link href={`/post/${post.id}`}>
               <h2 className="text-xl font-semibold hover:underline">
@@ -183,7 +187,7 @@ function Post({ post }) {
             <p className="mt-2 text-sm font-light">{post.body}</p>
           </div>
 
-          {/* Image */}
+          {/* แสดงรูปภาพ (ถ้ามี) */}
           {post.image && (
             <img
               className="w-full max-h-64 object-contain rounded"
@@ -192,7 +196,7 @@ function Post({ post }) {
             />
           )}
 
-          {/* Footer */}
+          {/* Footer แสดงจำนวนคอมเมนต์ */}
           <div className="flex space-x-4 text-gray-400 mt-2">
             <div className="postButtons">
               <ChatBubbleBottomCenterIcon className="h-6 w-6" />

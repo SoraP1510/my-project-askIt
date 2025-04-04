@@ -11,25 +11,25 @@ import Head from "next/head";
 import supabase from "../../lib/supabaseClient";
 
 function PostPage() {
-  const router = useRouter();
-  const { data: session } = useSession();
-  const [post, setPost] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const router = useRouter(); // ใช้เข้าถึง URL params
+  const { data: session } = useSession(); // ดึง session ของผู้ใช้
+  const [post, setPost] = useState(null); // state เก็บข้อมูลโพสต์
+  const [loading, setLoading] = useState(true); // state สำหรับสถานะโหลด
 
   const {
     register,
     handleSubmit,
     setValue,
     formState: { errors },
-  } = useForm();
+  } = useForm(); // ตั้งค่า react-hook-form
 
   const fetchPost = async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("post")
-      .select("*, comment(*), categories(*)") // ✅ ต้องใช้ comment ไม่ใช่ comments
-      .eq("id", router.query.postId)
-      .single();
+      .select("*, comment(*), categories(*)") // ดึงข้อมูลโพสต์ พร้อม comment และ category
+      .eq("id", router.query.postId) // filter จาก postId ที่ได้จาก URL
+      .single(); // เอาแค่ตัวเดียว
 
     if (error) {
       console.error("Error fetching post:", error);
@@ -38,8 +38,8 @@ function PostPage() {
         ...data,
         categories: Array.isArray(data.categories)
           ? data.categories[0]
-          : data.categories,
-        comments: data.comment, // ✅ เก็บ comment ไว้ใน post.comments
+          : data.categories, // แปลงให้เป็น object ถ้าเป็น array
+        comments: data.comment, // เก็บ comment ไว้ใน post.comments
       });
     }
 
@@ -48,16 +48,16 @@ function PostPage() {
 
   useEffect(() => {
     if (router.isReady) {
-      fetchPost();
+      fetchPost(); // โหลดโพสต์เมื่อ router พร้อมและมี postId
     }
   }, [router.isReady, router.query.postId]);
 
   const onSubmit = async (formData) => {
-    const notification = toast.loading("Posting your comment...");
+    const notification = toast.loading("Posting your comment..."); // แสดง loading ขณะส่ง comment
 
     const { error } = await supabase.from("comment").insert([
       {
-        post_id: router.query.postId,
+        post_id: router.query.postId, // เชื่อมกับโพสต์นี้
         username: session?.user?.name,
         text: formData.comment,
       },
@@ -66,16 +66,16 @@ function PostPage() {
     if (error) {
       toast.error("Failed to post comment", { id: notification });
     } else {
-      setValue("comment", "");
+      setValue("comment", ""); // ล้าง input
       toast.success("Comment posted!", { id: notification });
-      fetchPost(); // ✅ โหลดโพสต์ใหม่อีกรอบหลัง comment
+      fetchPost(); // โหลดโพสต์ใหม่เพื่ออัปเดต comment
     }
   };
 
   if (loading || !post) {
     return (
       <div className="flex w-full items-center justify-center p-10 text-xl">
-        <Jelly size={50} color="#9C5BCC" />
+        <Jelly size={50} color="#9C5BCC" /> {/* แสดง spinner ระหว่างโหลด */}
       </div>
     );
   }
@@ -86,9 +86,9 @@ function PostPage() {
         <title>AskIt</title>
       </Head>
 
-      <Post post={post} />
+      <Post post={post} /> {/* แสดงโพสต์ */}
 
-      {/* Comment box */}
+      {/* กล่องสำหรับพิมพ์ comment */}
       <div className="-mt-1 rounded-b-md border border-t-0 border-gray-300 bg-white p-5 pl-16">
         <p className="text-sm">
           Comment as <span className="text-red-500">{session?.user?.name}</span>
@@ -121,7 +121,7 @@ function PostPage() {
         </form>
       </div>
 
-      {/* Comments list */}
+      {/* แสดงรายการ comment */}
       <div className="-my-5 rounded-b-md border border-t-0 border-gray-300 bg-white py-5 px-10">
         <hr className="py-2" />
 
@@ -139,16 +139,16 @@ function PostPage() {
             >
               <hr className="absolute top-10 left-7 z-0 h-16 border" />
               <div className="z-50">
-                <Avatar seed={comment.username} />
+                <Avatar seed={comment.username} /> {/* แสดง avatar ของผู้คอมเมนต์ */}
               </div>
               <div className="flex flex-col">
                 <p className="py-2 text-xs text-gray-400">
                   <span className="font-semibold text-gray-600">
                     {comment.username}
                   </span>{" "}
-                  • <TimeAgo date={comment.created_at} />
+                  • <TimeAgo date={comment.created_at} /> {/* แสดงเวลาย้อนหลัง */}
                 </p>
-                <p>{comment.text}</p>
+                <p>{comment.text}</p> {/* แสดงข้อความคอมเมนต์ */}
               </div>
             </div>
           ))}
