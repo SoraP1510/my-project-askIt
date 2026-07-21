@@ -1,118 +1,103 @@
 import Image from "next/image";
-import React from "react";
+import { useState } from "react";
 import {
   ChevronDownIcon,
   MagnifyingGlassIcon,
 } from "@heroicons/react/24/solid";
 import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from "next-auth/react";
-import Link from "next/link";
+
+const LOGO_SRC =
+  "https://askit-project.vercel.app/_next/static/media/ASKIT.ea62f01f.svg";
 
 function Header({ onSearch }) {
-  const { data: session } = useSession(); // ดึงข้อมูล session ผู้ใช้ที่ล็อกอิน
-  const [term, setTerm] = React.useState(""); // เก็บข้อความใน search box
-  const router = useRouter(); // สำหรับเปลี่ยนเส้นทางหน้า (เช่น กลับหน้าแรก)
+  const { data: session } = useSession();
+  const [term, setTerm] = useState("");
+  const router = useRouter();
 
-  // เมื่อกด Enter ที่ search
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (onSearch) onSearch(term); // ส่งคำค้นหาให้ component ด้านนอก (เช่น Home)
+    onSearch?.(term);
   };
 
-  // เมื่อกดโลโก้ → เคลียร์คำค้นหาและกลับหน้าแรก
   const handleLogoClick = () => {
-    setTerm(""); // เคลียร์ input
-    if (onSearch) onSearch(""); // เคลียร์ผลลัพธ์ search
-    router.push("/"); // กลับหน้า index
+    setTerm("");
+    onSearch?.("");
+    router.push("/");
   };
 
   return (
-    <div className="sticky top-0 z-50 flex items-center bg-white px-4 py-2 shadow-sm">
-      {/* โลโก้ของเว็บ (คลิกเพื่อกลับหน้าแรกและล้าง search) */}
-      <div
-        onClick={handleLogoClick}
-        className="relative h-10 w-20 flex-shrink-0 cursor-pointer"
-      >
-        <div className="relative w-20 h-10">
+    <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/80 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:gap-6">
+        {/* Logo */}
+        <button
+          type="button"
+          onClick={handleLogoClick}
+          aria-label="Go to home"
+          className="flex h-10 w-24 shrink-0 items-center transition-opacity hover:opacity-80"
+        >
           <Image
-            src="https://askit-project.vercel.app/_next/static/media/ASKIT.ea62f01f.svg"
-            alt="Logo"
-            fill
+            src={LOGO_SRC}
+            alt="AskIt"
+            width={96}
+            height={40}
             className="object-contain"
-            sizes="(max-width: 768px) 100vw, 200px"
+            priority
           />
-        </div>
-      </div>
+        </button>
 
-      {/* ระยะห่างเฉย ๆ */}
-      <div className="mx-7 flex items-center xl:min-w-[300px]"></div>
-
-      {/* กล่องค้นหา */}
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-1 items-center space-x-2 rounded-sm border border-gray-200 bg-gray-100 px-3 py-1"
-      >
-        <MagnifyingGlassIcon className="h-6 w-6 text-gray-400" />
-        <input
-          value={term}
-          onChange={(e) => setTerm(e.target.value)} // อัปเดตข้อความค้นหา
-          className="flex-1 bg-transparent outline-none"
-          type="text"
-          placeholder="Search by title or category"
-        />
-        <button type="submit" hidden /> {/* ซ่อนปุ่ม submit จริงไว้ */}
-      </form>
-
-      {/* เส้นคั่นกับปุ่ม Sign In / Out (เฉพาะบนจอใหญ่) */}
-      <div className="mx-5 hidden items-center space-x-2 text-gray-500 lg:inline-flex">
-        <div className="h-9 lg:w-96"></div>
-        <hr className="h-10 border border-gray-100" />
-      </div>
-
-      {/* สำหรับ layout บนมือถือ (ว่างไว้) */}
-      <div className="ml-5 flex items-center lg:hidden" />
-
-      {/* ถ้ามี session → แสดง Sign Out / ไม่มีก็แสดง Sign In */}
-      {session ? (
-        <div
-          onClick={() => signOut()}
-          className="hidden cursor-pointer items-center space-x-2 border border-gray-100 p-2 lg:flex"
+        {/* Search */}
+        <form
+          onSubmit={handleSubmit}
+          role="search"
+          className="group flex h-10 flex-1 items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 transition-colors focus-within:border-gray-300 focus-within:bg-white focus-within:shadow-sm"
         >
-          {/* ไอคอน Google */}
-          <div className="relative h-5 w-5 flex-shrink-0">
-            <Image
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
-              alt="Google Icon"
-              fill
-              className="object-contain"
-            />
-          </div>
+          <MagnifyingGlassIcon className="h-5 w-5 shrink-0 text-gray-400 transition-colors group-focus-within:text-gray-600" />
+          <input
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            type="search"
+            placeholder="Search by title or category"
+            className="h-full w-full min-w-0 bg-transparent text-sm text-gray-900 outline-none placeholder:text-gray-400"
+          />
+        </form>
 
-          {/* ข้อมูลผู้ใช้ */}
-          <div className="flex-1 text-xs">
-            <p className="truncate">{session.user?.name}</p>
-            <p className="text-gray-400">Sign Out</p>
-          </div>
-          <ChevronDownIcon className="h-5 flex-shrink-0 text-gray-400" />
-        </div>
-      ) : (
-        <div
-          onClick={() => signIn()}
-          className="hidden cursor-pointer items-center space-x-2 border border-gray-100 p-2 lg:flex"
-        >
-          {/* ไอคอน Google */}
-          <div className="relative h-5 w-5 flex-shrink-0">
-            <Image
-              src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/768px-Google_%22G%22_logo.svg.png"
-              alt="Google Icon"
-              fill
-              className="object-contain"
+        {/* Auth button */}
+        {session ? (
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="hidden h-10 shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white pl-2 pr-3 transition-all hover:border-gray-300 hover:shadow-sm lg:flex"
+          >
+            <img
+              src="/google-icon.png"
+              alt=""
+              className="h-6 w-6 shrink-0 rounded-full"
             />
-          </div>
-          <p className="text-gray-400">Sign In</p>
-        </div>
-      )}
-    </div>
+            <div className="flex min-w-0 flex-col text-left text-xs leading-tight">
+              <span className="truncate font-medium text-gray-900">
+                {session.user?.name}
+              </span>
+              <span className="text-gray-500">Sign out</span>
+            </div>
+            <ChevronDownIcon className="h-4 w-4 shrink-0 text-gray-400" />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => signIn()}
+            className="hidden h-10 shrink-0 items-center gap-2 rounded-full border border-gray-200 bg-white px-3 text-sm font-medium text-gray-700 transition-all hover:border-gray-300 hover:bg-gray-50 hover:shadow-sm lg:flex"
+          >
+            <img
+              src="/google-icon.png"
+              alt=""
+              className="h-5 w-5 shrink-0"
+            />
+            <span>Sign in</span>
+          </button>
+        )}
+      </div>
+    </header>
   );
 }
 
